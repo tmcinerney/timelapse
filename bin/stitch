@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+
+#
+# Generates a video from captured photos.
+#
+stitch() {
+  
+  # Define parameters
+  local nonOpts=();
+  local currentDate=$(date +"%Y%m%d");
+  local currentTime=$(date +"%H%M");
+  local projectFolderPath="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)";
+  local inputFilePattern="*.jpg";
+  local inputFolderPath="${projectFolderPath}/output/stills";
+  local outputFolderPath="${projectFolderPath}/output";
+  local outputFileName="${currentDate}_${currentTime}.mp4";
+  local clean="false"
+  local framerate="30";
+
+  # Capture parameters
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --clean)
+        shift;
+          clean="true";
+        ;;
+      --filename)
+        shift;
+        if [ ! -z "$1" ]; then
+          outputFileName="$1";
+        fi;
+        ;;
+      --framerate)
+        shift;
+        if [ ! -z "$1" ]; then
+          framerate="$1";
+        fi;
+        ;;
+      --help|-h|-\?)
+        # Usage instructions
+        usage;
+        ;;
+      --)
+        # End of options parsing (allows for dash-prefixed filename arguments, etc.)
+        shift;
+        break;
+        ;;
+      *)
+        # Non-option argument
+        nonOpts+=("$1");
+        ;;
+    esac;
+    shift;
+  done;
+
+  # Pickup extra arguments, if '--' was specified
+  nonOpts+=("$@");
+  set -- "${nonOpts[@]}";
+
+  # Define variables dependent on parameters
+  local outputFilePath="${outputFolderPath}/${outputFileName}";
+
+  # Create the output folder if it doesn't exist
+  if [ ! -d "${outputFolderPath}" ]; then
+    mkdir -p "${outputFolderPath}";
+  fi;
+
+  echo "Generating timelapse video to: ${outputFilePath}";
+  ffmpeg -y \
+    -r ${framerate} \
+    -pattern_type glob \
+    -i "${inputFolderPath}/${inputFilePattern}" \
+    -c:v libx264 \
+    -pix_fmt yuv420p \
+    -movflags +faststart \
+    -loglevel quiet \
+    "${outputFilePath}";
+
+  # Remove the existing stills if enabled
+  if [ "${clean}" == "true" ]; then
+    echo "Deleting images";
+    rm "${inputFolderPath}/${inputFilePattern}";
+  fi;
+}
+
+#
+# Shows command line usage instructions, output to stderr. The script then
+# exits with return code 1.
+#
+usage() {
+  if [ -n "$1" ]; then
+    >&2 echo "$1";
+  fi;
+
+  >&2 cat <<USAGE_EOF
+Generates a timelapse video by stitching together captured images. Videos are captured to './output/'.
+
+usage: capture
+  Options:
+    --clean                     (Optional)    Delete the images used to generate the video upon completion. Defaults to 'false'.
+    --filename       STRING     (Optional)    The name of the MP4 file. Defaults to 'YYYYMMDD_HHMM.mp4'.
+    --framerate      NUMBER     (Optional)    The number of frames per second. Defaults to '30'.
+USAGE_EOF
+    exit 1;
+}
+
+stitch "$@";

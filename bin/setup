@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+
+#
+# Enable the camera.
+#
+enableCamera() {
+  # A value of 0 seems to mean enabled (https://raspberrypi.stackexchange.com/a/109221).
+  echo "* Enabling camera module";
+  sudo raspi-config nonint do_camera 0; 
+}
+
+#
+# Enable SSH.
+#
+enableSSH() {
+  # A value of 0 seems to mean enabled (https://raspberrypi.stackexchange.com/a/109221).
+  echo "* Enabling SSH";
+  sudo raspi-config nonint do_ssh 0;
+}
+
+#
+# Output message when complete.
+#
+finished() {
+  echo -e "\nYou must now reboot your Raspberry Pi for the camera module to work.";
+  echo "This can be done by running: sudo reboot";
+}
+
+#
+# Install required project dependencies.
+#
+installDependencies() {
+  echo "* Installing dependencies";
+  sudo apt-get install -qq ffmpeg ssmtp x264;
+}
+
+#
+# Setup cron.
+#
+setupCronJobs() {
+  echo "* Setting up cron schedules";
+  
+  local projectFolderPath="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)";
+  local configFolderPath="${projectFolderPath}/config";
+  local cronConfigFilePath="${configFolderPath}/cron.txt";
+  local captureTime=2; # Every n minutes.
+  local stitchTime=8;  # Every day at n o'clock.
+
+  # Create the output folder if it doesn't exist.
+  if [ ! -d "${configFolderPath}" ]; then
+    mkdir -p "${configFolderPath}";
+  fi;
+
+  # Write to file.
+  cat >${cronConfigFilePath} <<EOL
+# Run every ${captureTime} minutes.
+*/${captureTime} * * * * ${projectFolderPath}/bin/capture 2>&1
+
+# Run every day at ${stitchTime} o'clock.
+0 ${stitchTime} * * * ${projectFolderPath}/bin/stitch 2>&1
+EOL
+
+  # Install cron jobs from file.
+  # NOTE: This is a destructive process.
+  crontab ${cronConfigFilePath};
+}
+
+#
+# Output message when starting.
+#
+start() {
+  echo "#####################";
+  echo "#  TIMELAPSE SETUP  #";
+  echo "#####################";
+}
+
+#
+# Update system.
+#
+updateSystem() {
+  echo "* Updating system";
+  sudo apt-get -qq update;
+  sudo apt-get -qq upgrade;
+}
+
+# Do the things.
+start               && \
+updateSystem        && \
+installDependencies && \
+enableCamera        && \
+enableSSH           && \
+setupCronJobs       && \
+finished;

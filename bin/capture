@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+
+#
+# Takes a photo.
+#
+capture() {
+  
+  # Define parameters
+  local nonOpts=();
+  local currentDate=$(date +"%Y%m%d");
+  local currentTime=$(date +"%H%M");
+  local projectFolderPath="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)";
+  local outputFolderPath="${projectFolderPath}/output/stills";
+  local outputFileName="${currentDate}_${currentTime}.jpg";
+  local encoding="jpg";
+  local exposure="auto";
+  local height="1920";
+  local width="1440";
+  local quality="75";
+  local timeout="5s";
+
+  # Capture parameters
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --filename)
+        shift;
+        if [ ! -z "$1" ]; then
+          outputFileName="$1";
+        fi;
+        ;;
+      --height)
+        shift;
+        if [ ! -z "$1" ]; then
+          height="$1";
+        fi;
+        ;;
+      --quality)
+        shift;
+        if [ ! -z "$1" ]; then
+          quality="$1";
+        fi;
+        ;;
+      --width)
+        shift;
+        if [ ! -z "$1" ]; then
+          width="$1";
+        fi;
+        ;;
+      --help|-h|-\?)
+        # Usage instructions
+        usage;
+        ;;
+      --)
+        # End of options parsing (allows for dash-prefixed filename arguments, etc.)
+        shift;
+        break;
+        ;;
+      *)
+        # Non-option argument
+        nonOpts+=("$1");
+        ;;
+    esac;
+    shift;
+  done;
+
+  # Pickup extra arguments, if '--' was specified
+  nonOpts+=("$@");
+  set -- "${nonOpts[@]}";
+
+  # Define variables dependent on parameters
+  local outputFilePath="${outputFolderPath}/${outputFileName}";
+
+  # Create the output folder if it doesn't exist
+  if [ ! -d "${outputFolderPath}" ]; then
+    mkdir -p "${outputFolderPath}";
+  fi;
+
+  echo "Capturing image to: ${outputFilePath}";
+  raspistill \
+    --encoding ${encoding} \
+    --exposure ${exposure} \
+    --height ${height} \
+    --hflip \
+    --nopreview \
+    --output ${outputFilePath} \
+    --quality ${quality} \
+    --timeout ${timeout} \
+    --vflip \
+    --width ${width};
+}
+
+#
+# Shows command line usage instructions, output to stderr. The script then
+# exits with return code 1.
+#
+usage() {
+  if [ -n "$1" ]; then
+    >&2 echo "$1";
+  fi;
+
+  >&2 cat <<USAGE_EOF
+Take a photo using the Raspberry Pi camera module. Images are captured to './output/stills/'.
+
+usage: capture
+  Options:
+    --filename       STRING     (Optional)    The name of the JPG file. Defaults to 'YYYYMMDD_HHMM.jpg'.
+    --height         NUMBER     (Optional)    The height (in pixels) of the image. Defaults to '1920',
+    --quality        NUMBER     (Optional)    The quality (as a percentage) of the image. Defaults to '75'.
+    --width          NUMBER     (Optional)    The width (in pixels) of the image. Defaults to '1440',
+USAGE_EOF
+    exit 1;
+}
+
+capture "$@";
