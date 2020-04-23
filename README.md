@@ -12,7 +12,7 @@ The following assumptions are made:
 
 ## Installation
 
-> **NOTE:** Read through `./bin/setup` to understand what the installation script does. It will **override** your `cron` configuration.
+**NOTE:** Read through `./bin/setup` to understand what the installation script does. It will **override** your `cron` configuration.
 
 1. On your Raspberry Pi, clone this repository to a location of your choice. For example to the `~/Code` directory.
 
@@ -39,10 +39,6 @@ The following assumptions are made:
     * Capture a picture **every 2 minutes**.
     * Stitch together captured pictures into a video **daily at 8am**.
     * Both captured pictures and videos are located in `./output`.
-
-## Usage
-
-TODO
 
 ## References
 * https://www.raspberrypi.org/documentation/usage/camera/raspicam/timelapse.md
