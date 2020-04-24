@@ -11,7 +11,8 @@ stitch() {
   local currentTime=$(date +"%H%M");
   local projectFolderPath="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)";
   local inputFilePattern="*.jpg";
-  local inputFolderPath="${projectFolderPath}/output/stills";
+  local inputFolderPath="${projectFolderPath}/output/stills/${inputFilePattern}";
+  local processingFolderPath="${projectFolderPath}/output/stills/${currentDate}_${currentTime}";
   local outputFolderPath="${projectFolderPath}/output";
   local outputFileName="${currentDate}_${currentTime}.mp4";
   local clean="false"
@@ -65,11 +66,20 @@ stitch() {
     mkdir -p "${outputFolderPath}";
   fi;
 
+  # Create the processing folder if it doesn't exist
+  if [ ! -d "${processingFolderPath}" ]; then
+    mkdir -p "${processingFolderPath}";
+  fi;
+
+  # Move images to processing folder
+  echo "Moving stills to processing folder: ${processingFolderPath}";
+  mv ${inputFolderPath} ${processingFolderPath};
+
   echo "Generating timelapse video to: ${outputFilePath}";
   ffmpeg -y \
     -r ${framerate} \
     -pattern_type glob \
-    -i "${inputFolderPath}/${inputFilePattern}" \
+    -i "${processingFolderPath}/${inputFilePattern}" \
     -c:v libx264 \
     -pix_fmt yuv420p \
     -movflags +faststart \
@@ -78,8 +88,8 @@ stitch() {
 
   # Remove the existing stills if enabled
   if [ "${clean}" == "true" ]; then
-    echo "Deleting images";
-    rm "${inputFolderPath}/${inputFilePattern}";
+    echo "Removing stills from processing folder: ${processingFolderPath}";
+    rm ${processingFolderPath};
   fi;
 }
 

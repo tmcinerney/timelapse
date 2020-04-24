@@ -21,7 +21,7 @@ enableSSH() {
 #
 # Output message when complete.
 #
-finished() {
+finish() {
   echo -e "\nYou must now reboot your Raspberry Pi for the camera module to work.";
   echo "This can be done by running: sudo reboot";
 }
@@ -54,10 +54,10 @@ setupCronJobs() {
   # Write to file.
   cat >${cronConfigFilePath} <<EOL
 # Run every ${captureTime} minutes.
-*/${captureTime} * * * * ${projectFolderPath}/bin/capture 2>&1
+*/${captureTime} * * * * ${projectFolderPath}/bin/capture >> ${projectFolderPath}/log/cron.log 2>&1
 
-# Run every day at ${stitchTime} o'clock.
-0 ${stitchTime} * * * ${projectFolderPath}/bin/stitch 2>&1
+# Run every day at ${stitchTime} o'clock. Append '--clean' to 'stitch' to delete processing folder.
+0 ${stitchTime} * * * ${projectFolderPath}/bin/stitch >> ${projectFolderPath}/log/cron.log 2>&1
 EOL
 
   # Install cron jobs from file.
@@ -90,4 +90,4 @@ installDependencies && \
 enableCamera        && \
 enableSSH           && \
 setupCronJobs       && \
-finished;
+finish;

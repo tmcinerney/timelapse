@@ -12,7 +12,7 @@ The following assumptions are made:
 
 ## Installation
 
-**NOTE:** Read through `./bin/setup` to understand what the installation script does. It will **override** your `cron` configuration.
+**NOTE:** Read through [`./bin/setup`](https://github.com/tmcinerney/timelapse/blob/master/bin/setup) to understand what the installation script does. It will **override** your `cron` configuration.
 
 1. On your Raspberry Pi, clone this repository to a location of your choice. For example to the `~/Code` directory.
 
